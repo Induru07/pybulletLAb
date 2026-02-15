@@ -1,0 +1,9 @@
+import pybullet as p
+import time
+
+cid = p.connect(p.GUI)
+p.setGravity(0, 0, -9.81)
+
+while True:
+    p.stepSimulation()
+    time.sleep(1/240)
