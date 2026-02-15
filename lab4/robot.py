@@ -39,7 +39,7 @@ class HuskyRobot:
         # Differential-drive parameters (tuned for stability)
         self.wheel_radius = 0.165 * scale
         self.wheel_base = 0.55 * scale
-        self.drive_force = 50000.0
+        self.drive_force = 150.0      # Enough to move but can't push through walls
 
         # For odometry
         self._last_joint_pos = None
@@ -78,10 +78,16 @@ class HuskyRobot:
         return float(pos[0]), float(pos[1]), float(yaw)
 
     def get_velocity(self) -> tuple[float, float]:
-        """Return (v_linear, w_angular) from physics engine."""
+        """Return (v_linear, w_angular) from physics engine.
+        v is signed: positive = forward in robot frame."""
         lin_vel, ang_vel = p.getBaseVelocity(
             self.body_id, physicsClientId=self.cid)
-        v = math.hypot(lin_vel[0], lin_vel[1])
+        # Project world velocity onto robot's forward direction
+        _, _, yaw = self.get_pose()
+        cos_yaw = math.cos(yaw)
+        sin_yaw = math.sin(yaw)
+        # Forward component (dot product of velocity with heading vector)
+        v = lin_vel[0] * cos_yaw + lin_vel[1] * sin_yaw
         w = ang_vel[2]
         return float(v), float(w)
 

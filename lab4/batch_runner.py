@@ -89,7 +89,7 @@ def main():
     parser.add_argument("--friction", type=float, default=0.05)
     parser.add_argument("--n", type=int, default=500)
     parser.add_argument("--scan_period", type=float, default=0.4)
-    parser.add_argument("--angles_n", type=int, default=16)
+    parser.add_argument("--angles_n", type=int, default=36)
     parser.add_argument("--nav", action="store_true")
     parser.add_argument("--goal_rc", type=str, default=None)
     parser.add_argument("--goal_top", action="store_true")

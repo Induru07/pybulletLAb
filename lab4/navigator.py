@@ -22,14 +22,18 @@ def _clamp(x: float, lo: float, hi: float) -> float:
 @dataclass
 class NavConfig:
     cell_size: float = 0.5
-    lookahead_m: float = 0.8
-    v_nom: float = 1.5             # Increased from 1.0
-    w_max: float = 2.0
-    k_heading: float = 2.5
+    lookahead_m: float = 0.6
+    v_nom: float = 1.0              # Moderate speed
+    w_max: float = 2.5
+    k_heading: float = 3.0
     goal_tol_m: float = 0.6
     # Dynamic obstacle avoidance
-    safety_radius: float = 0.35       # Aggressive reduction for maze (walls are ~0.25m away)
-    slowdown_radius: float = 0.70     # Reduced to allow movement in corridors
+    safety_radius: float = 0.35
+    slowdown_radius: float = 0.70
+    # Wall avoidance thresholds (will be scaled to cell_size in Navigator.__init__)
+    wall_front_stop: float = 0.35     # Full stop if wall ahead closer than this
+    wall_front_slow: float = 0.60     # Start slowing if wall ahead closer than this
+    wall_side_push: float = 0.30      # Start side-push if wall closer than this
 
 
 class Navigator:
@@ -90,8 +94,8 @@ class Navigator:
             cell_center_to_world(r, c, self.rows, self.cols, self.cfg.cell_size)
             for (r, c) in path
         ]
-        # Smooth: skip collinear intermediate waypoints
-        self.path_world = _smooth_path(raw_world)
+        # Keep all waypoints — smoothing can clip corners through walls
+        self.path_world = raw_world
         self._path_idx = 0
         return True
 
@@ -180,15 +184,34 @@ class Navigator:
 
         # Reactive wall avoidance
         if scan:
-            if scan.get('front', 10.0) < 0.4: # Reduced from 0.6
-                v *= max(0.0, (scan['front'] - 0.15) / 0.25)
+            front_d = scan.get('front', 10.0)
+            left_d = scan.get('left', 10.0)
+            right_d = scan.get('right', 10.0)
 
-            # Disable side avoidance if turning in place (prevent fighting the turn)
+            # ── Front wall: stop and turn away ──
+            if front_d < self.cfg.wall_front_stop:
+                # Wall very close ahead — stop forward motion & turn toward open side
+                v = 0.0
+                if not is_turning_in_place:
+                    # Turn toward whichever side has more space
+                    if left_d > right_d:
+                        w = self.cfg.w_max * 0.7   # turn left
+                    else:
+                        w = -self.cfg.w_max * 0.7  # turn right
+            elif front_d < self.cfg.wall_front_slow:
+                # Wall approaching — proportional slowdown
+                slow_factor = (front_d - self.cfg.wall_front_stop) / (
+                    self.cfg.wall_front_slow - self.cfg.wall_front_stop)
+                v *= _clamp(slow_factor, 0.1, 1.0)
+
+            # ── Side walls: gentle push away ──
             if not is_turning_in_place:
-                if scan.get('left', 10.0) < 0.20: # Reduced from 0.45
-                    w -= 1.5 * (0.20 - scan['left'])
-                if scan.get('right', 10.0) < 0.20: # Reduced from 0.45
-                    w += 1.5 * (0.20 - scan['right'])
+                if left_d < self.cfg.wall_side_push:
+                    push = 2.0 * (self.cfg.wall_side_push - left_d) / self.cfg.wall_side_push
+                    w -= push
+                if right_d < self.cfg.wall_side_push:
+                    push = 2.0 * (self.cfg.wall_side_push - right_d) / self.cfg.wall_side_push
+                    w += push
 
         # Clamp w finally
         w = _clamp(w, -self.cfg.w_max, self.cfg.w_max)

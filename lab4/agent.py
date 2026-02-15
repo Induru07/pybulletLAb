@@ -134,6 +134,7 @@ class RobotAgent:
         self.stall_ref_y = sy
         self.stall_ref_th = sth
         self.backup_until = -1.0
+        self._backup_w = -1.0  # turn direction during backup
         self.emergency_forward_until = -1.0
         self.was_degraded = False
         self.gt_usage_time = 0.0
@@ -187,6 +188,8 @@ class RobotAgent:
                 (r, c), mode = tgt
                 print(f"[Agent {self.id}] Starting: {mode} at ({r},{c})")
                 self.nav.set_goal_cell(r, c)
+                sx, sy, _ = self.start_pose
+                self.nav.plan_from_pose(sx, sy)
             else:
                 self.active = False
                 return
@@ -223,22 +226,21 @@ class RobotAgent:
         x_gt, y_gt, th_gt = self.robot.get_pose()
         pf_err = 0.0
         
-        # ── Stall detection ──
-        if (sim_t - self.stall_ref_t) >= 3.0:
+        # ── Stall detection (check every 2 seconds) ──
+        if (sim_t - self.stall_ref_t) >= 2.0:
             dist_moved = math.hypot(x_gt - self.stall_ref_x, y_gt - self.stall_ref_y)
             rot_moved = abs(_wrap(th_gt - self.stall_ref_th))
             
-            # Check if moving command was non-zero? We don't track last command easily here.
-            # Assume if active we should move.
-            if dist_moved < 0.15 and rot_moved < 0.2: # Check both translation and rotation
+            if dist_moved < 0.10 and rot_moved < 0.15:
                 self.stall_count += 1
-                if self.stall_count >= 2:
+                if self.stall_count >= 1:
+                    # Immediately backup + random turn on first stall
+                    turn_dir = 1.0 if np.random.random() > 0.5 else -1.0
                     print(f"[Agent {self.id}] stall #{self.stall_count} -> backup+turn")
-                    self.backup_until = sim_t + 1.0
+                    self.backup_until = sim_t + 1.5
+                    self._backup_w = turn_dir * 1.5
                     self.stall_count = 0
-                else:
-                    print(f"[Agent {self.id}] stall detected -> force replan")
-                self.last_plan_t = -1e9
+                self.last_plan_t = -1e9  # force replan after recovery
             else:
                 self.stall_count = 0
             self.stall_ref_t = sim_t
@@ -250,7 +252,7 @@ class RobotAgent:
         v, w = 0.0, 0.0
         
         if sim_t < self.backup_until:
-             v, w = -0.2, -0.5
+             v, w = -0.4, getattr(self, '_backup_w', -1.0)
         elif sim_t < self.emergency_forward_until:
              v, w = 0.9, 0.0
         else:
@@ -353,9 +355,11 @@ class RobotAgent:
                          self.active = False # Single goal done
                          return {"pf_err": pf_err}
             
-            # Plan
-            if (sim_t - self.last_plan_t) >= self.cfg.replan_interval and goal_dist_gt > 2.0:
-                 self.nav.plan_from_pose(x_ctrl, y_ctrl)
+            # Plan — also replan if we have no path at all
+            needs_plan = (sim_t - self.last_plan_t) >= self.cfg.replan_interval
+            has_no_path = len(self.nav.path_world) == 0
+            if (needs_plan or has_no_path) and goal_dist_gt > self.nav.cfg.goal_tol_m:
+                 self.nav.plan_from_pose(x_gt, y_gt)  # Use GT for planning (more reliable)
                  self.last_plan_t = sim_t
             
             # Compute Cmd
@@ -416,11 +420,11 @@ class RobotAgent:
                 if len(chunk) == 0: return 10.0
                 return float(np.min(chunk)) # Use min for safer avoidance
             
-            hw = max(1, K // 12) # +/- 1 ray for 16 rays (~22 deg).
+            hw = max(2, K // 8)  # Wider sector for better wall detection
             
-            # Front (mid)
+            # Front (mid) — narrow sector to avoid false triggers from side walls
             front_idx = K // 2
-            front_dist = get_sector_avg(front_idx, hw)
+            front_dist = get_sector_avg(front_idx, max(1, K // 16))
             
             # Right (-pi/2 -> K/4)
             right_idx = K // 4

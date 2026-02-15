@@ -26,7 +26,7 @@ def main():
     # ── Particle filter ──
     parser.add_argument("--n", type=int, default=500, help="Number of particles")
     parser.add_argument("--scan_period", type=float, default=0.4)
-    parser.add_argument("--angles_n", type=int, default=16, help="Number of lidar rays")
+    parser.add_argument("--angles_n", type=int, default=36, help="Number of lidar rays")
 
     # ── Navigation ──
     parser.add_argument("--nav", action="store_true", help="Enable autonomous navigation")
