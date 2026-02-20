@@ -363,16 +363,19 @@ class RobotAgent:
                 )
 
             # ── Control pose: odometry corrected by PF when confident ──
-            # Gate on cluster weight fraction (not global Neff, which is
-            # useless on symmetric maps where particles spread across modes).
-            # Adaptive alpha: higher cluster_wf → stronger correction.
+            # Gates to prevent bad fusion on symmetric maps:
+            #  1. cluster_wf > 5%   — PF cluster has dominant weight
+            #  2. proximity < 3m    — PF agrees with odom (prevents wrong-mode pull)
+            #  3. adaptive alpha    — stronger correction when more confident
             if did_resample and cluster_wf > 0.05:
-                alpha = min(0.30, cluster_wf * 0.5)  # e.g. cwf=0.3 → α=0.15
                 dx = x_pf - x_odom
                 dy = y_pf - y_odom
-                self.odom.x += alpha * dx
-                self.odom.y += alpha * dy
-                x_odom, y_odom, th_odom = self.odom.x, self.odom.y, self.odom.theta
+                dist_pf_odom = math.hypot(dx, dy)
+                if dist_pf_odom < 5.0:  # proximity gate: only fuse when PF & odom agree
+                    alpha = min(0.30, cluster_wf * 0.5)
+                    self.odom.x += alpha * dx
+                    self.odom.y += alpha * dy
+                    x_odom, y_odom, th_odom = self.odom.x, self.odom.y, self.odom.theta
 
             x_ctrl, y_ctrl, th_ctrl = x_odom, y_odom, th_odom
 

@@ -85,9 +85,9 @@ python proof_pf_no_gt.py
 ### Particle Filter
 | Parameter       | Default | Description                      |
 |-----------------|---------|----------------------------------|
-| `--n`           | 500     | Number of particles              |
-| `--scan_period` | 0.4     | Lidar scan period (seconds)      |
-| `--angles_n`    | 36      | Number of lidar rays             |
+| `--n`           | 800     | Number of particles              |
+| `--scan_period` | 0.2     | Lidar scan period (seconds)      |
+| `--angles_n`    | 72      | Number of lidar rays             |
 
 ### Navigation
 | Parameter       | Default | Description                      |
@@ -196,8 +196,8 @@ Demonstrates that the control loop uses 0% ground-truth.
 
 | Map | Distance | Mean PF err | Final PF err | Final Odom err | Mean Neff |
 |-----|----------|-------------|--------------|----------------|-----------|
-| maze_lab4 | 5.0 m | 5.21 m | 8.70 m | 0.75 m | 180.2 |
-| warehouse_small | 155.1 m | 9.24 m | 4.57 m | 4.91 m | 8.9 |
+| maze_lab4 | 8.4 m | 5.43 m | 2.82 m | 8.61 m | 162.6 |
+| warehouse_small | 112.2 m | 11.21 m | 2.29 m | 8.06 m | 9.3 |
 
 ---
 
@@ -263,8 +263,8 @@ Wheel Encoders → DiffDrive Odometry (local pose)
     → Random Particle Injection (kidnapped-robot recovery, 1%)
     → PF Update (Gaussian likelihood) → Systematic Resample
     → PF Cluster Estimate (best-mode weighted mean, avoids symmetric aliasing)
-    → Odometry + PF Fusion (position-only, gated on cluster weight fraction,
-      adaptive α = min(0.30, cwf×0.5))
+    → Odometry + PF Fusion (position-only, gated on cluster weight fraction
+      + proximity < 5m, adaptive α = min(0.30, cwf×0.5))
     → Control Pose (odom-corrected-by-PF)
     → A* Plan (inflated grid, fallback to raw grid)
     → Pure-Pursuit Follower + Reactive Wall Avoidance
@@ -335,23 +335,23 @@ python proof_pf_no_gt.py
 
 **What it proves:**
 - The control loop uses **0% ground-truth** for navigation decisions
-- On `maze_lab4` (unique corridors): PF converges well — ~4.6m mean error, Neff ~92
-- On `warehouse_small` (symmetric shelves): PF struggles with perceptual aliasing (~12m error) but robot still navigates 67m+ reaching multiple goals via odometry + reactive wall avoidance
+- On `maze_lab4` (unique corridors): PF converges well — ~5.4m mean error, Neff ~163
+- On `warehouse_small` (symmetric shelves): PF struggles with perceptual aliasing (~11m error) but robot still navigates 112m+ reaching multiple goals via odometry + proximity-gated PF fusion
 - Kidnapped-robot recovery (random injection) continuously attempts re-localization
 
 **Metrics table** printed to console:
 ```
   PF METRICS — maze_lab4  (no GT in control)
-  Mean PF error (m)                  4.64
-  Final PF error (m)                 4.72
-  Mean odom error (m)                3.92
-  Mean Neff                          92.5
+  Mean PF error (m)                  5.43
+  Final PF error (m)                 2.82
+  Mean odom error (m)                5.44
+  Mean Neff                         162.6
 
   PF METRICS — warehouse_small  (no GT in control)
-  Mean PF error (m)                 12.41
-  Final odom error (m)               8.83
-  Distance traveled                 67.1 m (5 goals reached)
-  Mean Neff                           9.2
+  Mean PF error (m)                 11.21
+  Final PF error (m)                 2.29
+  Distance traveled                112.2 m (7 goals reached)
+  Mean Neff                           9.3
 ```
 
 ---
