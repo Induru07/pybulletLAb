@@ -106,6 +106,26 @@ class ParticleFilter:
         self.p = self.p[idx].copy()
         self.w[:] = 1.0 / n
 
+    # ── Kidnapped-robot recovery ──
+    def inject_random_particles(self, free_cells_xy: np.ndarray, frac: float = 0.05):
+        """
+        Replace *frac* of the lowest-weight particles with random samples
+        drawn uniformly from *free_cells_xy* (Nx2 array of (x,y) positions).
+        This gives the filter a chance to recover from kidnapping / severe drift
+        without needing ground-truth.
+        """
+        n_inject = max(1, int(self.cfg.n * frac))
+        if len(free_cells_xy) == 0:
+            return
+        # Pick the worst particles (lowest weight)
+        worst_idx = np.argsort(self.w)[:n_inject]
+        # Random free-space positions
+        chosen = free_cells_xy[np.random.randint(0, len(free_cells_xy), size=n_inject)]
+        self.p[worst_idx, 0] = chosen[:, 0]
+        self.p[worst_idx, 1] = chosen[:, 1]
+        self.p[worst_idx, 2] = np.random.uniform(-math.pi, math.pi, size=n_inject)
+        self.w[worst_idx] = 1.0 / self.cfg.n  # equal prior weight
+
 
     def estimate(self) -> tuple[float, float, float]:
         x = float(np.sum(self.p[:, 0] * self.w))

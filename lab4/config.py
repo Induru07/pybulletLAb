@@ -36,6 +36,11 @@ class SimConfig:
     emergency_forward_s: float = 1.2
     emergency_pf_runs: int = 3
 
+    # Kidnapped-robot PF recovery
+    pf_random_inject_pct: float = 0.05    # fraction of particles replaced with random free-space samples each resample
+    pf_dense_scan_interval: int = 10      # every N scans, use a denser lidar sweep
+    pf_dense_scan_rays: int = 72          # number of rays for the dense sweep
+
     # Autotest scenario
     autotest: bool = False
     max_sim_s: float = 60.0

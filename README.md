@@ -3,6 +3,12 @@
 Autonomous Mobile Robot (AMR) warehouse simulation built with **PyBullet**.  
 Demonstrates planning, localization, SLAM, multi-robot coordination, and human-aware navigation in warehouse-like environments.
 
+### Key Features
+- **Ground-truth-free autonomy** — control loop uses odometry corrected by particle filter (no GT pose for decisions)
+- **Kidnapped-robot recovery** — random particle injection + periodic dense lidar scans for re-localization
+- **Articulated human workers** — bubbleperson URDF models patrolling waypoint loops through aisles
+- **Odometry + PF fusion** — smooth local control from wheel encoders, long-term drift correction from PF when confident
+
 ---
 
 ## Table of Contents
@@ -14,6 +20,7 @@ Demonstrates planning, localization, SLAM, multi-robot coordination, and human-a
 6. [Architecture](#architecture)
 7. [Outputs & Logs](#outputs--logs)
 8. [Batch Testing](#batch-testing)
+9. [PF Proof Script](#pf-proof-script)
 
 ---
 
@@ -32,7 +39,7 @@ source .venv/bin/activate        # Linux/macOS
 pip install numpy pybullet matplotlib
 ```
 
-**Requirements:** Python 3.10+, NumPy, PyBullet, Matplotlib (optional, for analysis plots).
+**Requirements:** Python 3.10+, NumPy, PyBullet, Matplotlib (for proof/analysis plots).
 
 ---
 
@@ -50,7 +57,7 @@ python -m lab4.main --map warehouse_small --nav --goal_random
 # Headless mode — fast, no GUI
 python -m lab4.main --map warehouse_small --nav --goal_random --direct --seed 42
 
-# Multi-robot + humans
+# Multi-robot + humans (bubbleperson workers patrolling aisles)
 python -m lab4.main --map warehouse_small --nav --goal_random --robots 3 --humans 2
 
 # Multi-job (pick & drop missions)
@@ -58,6 +65,9 @@ python -m lab4.main --map warehouse_medium --nav --jobs 5 --robots 2 --humans 1
 
 # SLAM mode (build map from scratch)
 python -m lab4.main --map warehouse_small --nav --goal_random --slam --direct
+
+# Generate PF proof plot (no GT in control loop)
+python proof_pf_no_gt.py
 ```
 
 ---
@@ -138,6 +148,50 @@ python -m lab4.main --map warehouse_medium --nav --jobs 3 --robots 2 --humans 3 
 ```
 Robots navigate while detecting and avoiding simulated pedestrians (stop/slow/reroute).
 
+### Scenario 3 — GT-Free Autonomy (Odometry + PF Fusion)
+```bash
+# GUI — watch the robot navigate using only odometry + PF (no ground-truth in control)
+python -m lab4.main --map warehouse_small --nav --goal_random --humans 2 --seed 42
+
+# Headless — fast run, check metrics at the end
+python -m lab4.main --map warehouse_small --nav --goal_random --humans 2 --direct --seed 42
+```
+Robot plans and follows paths using wheel-encoder odometry corrected by PF when confident.
+Ground-truth is only used for: (1) simulating lidar sensor readings, (2) logging/metrics.
+PF debug overlay (red cross = PF estimate, green dots = particles) visible in GUI mode.
+
+### Scenario 4 — PF Convergence on Asymmetric Map
+```bash
+python -m lab4.main --map maze_lab4 --nav --goal_random --direct --seed 42 --max_sim_s 40
+```
+The maze has unique corridor geometry — PF converges to ~2–4m error with high Neff (~60%).
+Good test case for demonstrating proper MCL localization without perceptual aliasing.
+
+### Scenario 5 — Kidnapped-Robot Recovery Demo
+```bash
+python -m lab4.main --map warehouse_small --nav --goal_random --direct --seed 99 --max_sim_s 60
+```
+Random particle injection (2% per scan) + dense lidar sweeps (72 rays every 5 scans)
+continuously attempt re-localization. On symmetric maps, the PF may not fully converge
+but the robot still navigates successfully via odometry.
+
+### Scenario 6 — Bubbleperson Workers Patrol
+```bash
+# GUI — watch articulated human models walking waypoint loops
+python -m lab4.main --map warehouse_small --nav --goal_random --humans 4 --seed 42
+```
+Workers use the bubbleperson URDF (articulated humanoid) instead of placeholder capsules.
+Each worker follows a BFS-generated loop of ~6 waypoints at 0.8 m/s steady speed.
+Robots detect and avoid workers during navigation.
+
+### Scenario 7 — Proof Plot Generation
+```bash
+python proof_pf_no_gt.py
+```
+Runs two headless simulations (maze_lab4 + warehouse_small) and generates `pf_proof.png`:
+3×2 panel plot showing position error, heading error, and Neff vs time for each map.
+Demonstrates that the control loop uses 0% ground-truth.
+
 ---
 
 ## Maps
@@ -150,7 +204,7 @@ Available warehouse maps in `shared/maps/`:
 | `warehouse_medium.txt`  | 50×80 | Medium warehouse with office, charging zone, chicanes |
 | `warehouse_big.txt`     | 80×120 | Large warehouse with multiple zones |
 | `my_warehouse.txt`      | —      | Custom/user-generated warehouse |
-| `maze_lab4.txt`         | —      | Lab maze for testing |
+| `maze_lab4.txt`         | 17×25  | Asymmetric lab maze (good PF convergence) |
 | `maze_realistic.txt`    | —      | Realistic maze |
 | `maze_realistic_x4.txt` | —      | Large realistic maze (4x scale) |
 
@@ -175,7 +229,7 @@ lab4/
 ├── control.py          # Keyboard teleop controller (WASD/ZQSD + arrows)
 ├── odometry.py         # Differential-drive odometry (wheel encoder integration)
 ├── job_manager.py      # Multi-job pick/drop queue with nearest-neighbor ordering
-├── human.py            # Simulated human pedestrian (capsule body, random waypoints)
+├── human.py            # Simulated human workers (bubbleperson URDF, waypoint patrol loops)
 ├── slam.py             # Occupancy grid SLAM (log-odds updates + Bresenham ray tracing)
 ├── world.py            # Grid ↔ world coordinate conversions
 ├── batch_runner.py     # Run N missions automatically, collect & summarize results
@@ -194,16 +248,24 @@ shared/
     └── gen_warehouse_map.py# Warehouse map generator (small/medium/big presets)
 ```
 
-### Control Pipeline
+### Control Pipeline (GT-Free)
 ```
-Wheel Encoders → DiffDrive Odometry (dC, dT)
+Wheel Encoders → DiffDrive Odometry (local pose)
     → PF Predict (motion model + noise)
-    → Simulated Lidar Scan (ray-marching on grid)
-    → PF Update (Gaussian likelihood) → Systematic Resample
+    → Physical Lidar Scan (ray-marching on grid from robot body)
+    → Random Particle Injection (kidnapped-robot recovery, 2%)
+    → PF Update (Gaussian likelihood) → Neff check → Systematic Resample
     → PF Estimate (weighted mean)
+    → Odometry + PF Fusion (blend when Neff > 30%, α=0.25)
+    → Control Pose (odom-corrected-by-PF)
     → A* Plan (inflated grid, fallback to raw grid)
-    → Pure-Pursuit Follower + Collision Avoidance
+    → Pure-Pursuit Follower + Reactive Wall Avoidance
     → (v, w) → Husky Differential Drive
+
+GT pose is used ONLY for:
+  - Simulating physical sensor readings (lidar ray-cast from robot body)
+  - Logging / metrics / debug overlay
+  - NOT for any control or planning decisions
 ```
 
 ### Multi-Robot Priority System
@@ -219,7 +281,7 @@ All robots always yield to humans.
 
 Each run creates a timestamped folder under `shared/data/run_YYYYMMDD_HHMMSS/`:
 
-- **`pf.csv`** — Particle filter: `t, x_pf, y_pf, th_pf, x_gt, y_gt, th_gt, err_xy, neff, resample_count`
+- **`pf_agent0.csv`** — Particle filter: `t, x_pf, y_pf, th_pf, x_gt, y_gt, th_gt, err_xy, err_th, neff, resample_count, x_odom, y_odom, th_odom, err_odom`
 - **`odometry.csv`** — Odometry: `t, x_odo, y_odo, th_odo, x_gt, y_gt, th_gt, v_cmd, w_cmd`
 - **`summary.json`** — Mission summary: success, time, distance, PF error, GT usage %
 
@@ -251,6 +313,38 @@ python -m lab4.analyze_runs --data_dir shared/data
 ```
 
 See `lab4/batch_runner.py` and `lab4/analyze_runs.py` for details.
+
+---
+
+## PF Proof Script
+
+The `proof_pf_no_gt.py` script runs two headless simulations and generates a comparison plot:
+
+```bash
+python proof_pf_no_gt.py
+# Output: pf_proof.png (3×2 panel: position error, heading error, Neff vs time)
+```
+
+**What it proves:**
+- The control loop uses **0% ground-truth** for navigation decisions
+- On `maze_lab4` (unique corridors): PF converges well — ~4.6m mean error, Neff ~92
+- On `warehouse_small` (symmetric shelves): PF struggles with perceptual aliasing (~12m error) but robot still navigates 67m+ reaching multiple goals via odometry + reactive wall avoidance
+- Kidnapped-robot recovery (random injection) continuously attempts re-localization
+
+**Metrics table** printed to console:
+```
+  PF METRICS — maze_lab4  (no GT in control)
+  Mean PF error (m)                  4.64
+  Final PF error (m)                 4.72
+  Mean odom error (m)                3.92
+  Mean Neff                          92.5
+
+  PF METRICS — warehouse_small  (no GT in control)
+  Mean PF error (m)                 12.41
+  Final odom error (m)               8.83
+  Distance traveled                 67.1 m (5 goals reached)
+  Mean Neff                           9.2
+```
 
 ---
 
