@@ -43,20 +43,17 @@ class SimulatedHuman:
         self.rng = random.Random(seed) if seed is not None else random.Random()
 
         # ── Load bubbleperson URDF ──
-        # Scale the model to fit corridor width (~40% of cell_size height)
-        global_scale = max(0.15, cell_size * 0.35)
+        # URDF body parts are already 2× larger; scale to fit corridors
+        global_scale = max(0.25, cell_size * 0.50)
         self.body_id = p.loadURDF(
             _URDF_PATH,
-            basePosition=[start_x, start_y, 0.05],
+            basePosition=[start_x, start_y, 0.55 * global_scale],
             baseOrientation=p.getQuaternionFromEuler([0, 0, 0]),
             globalScaling=global_scale,
-            useFixedBase=False,
+            useFixedBase=True,           # kinematic — no physics response
             physicsClientId=cid,
         )
-        # Set mass (the URDF has mass already, but we override to ~60 kg total)
-        p.changeDynamics(self.body_id, -1, mass=60.0, physicsClientId=cid)
-        # High lateral friction so it doesn't slide around
-        p.changeDynamics(self.body_id, -1, lateralFriction=1.0, physicsClientId=cid)
+        self._scale = global_scale
 
         # ── Build a closed waypoint loop ──
         self.speed = self.PATROL_SPEED
@@ -117,7 +114,7 @@ class SimulatedHuman:
 
     # ─────────────────────────── update each tick ─────────────────────────────
     def update(self, dt: float):
-        """Move along the waypoint loop at steady speed."""
+        """Move along the waypoint loop at steady speed (kinematic)."""
         if not self.waypoints:
             return
 
@@ -137,17 +134,29 @@ class SimulatedHuman:
 
         # Heading toward current waypoint
         heading = math.atan2(ty - y, tx - x)
-        vx = self.speed * math.cos(heading)
-        vy = self.speed * math.sin(heading)
+        step = min(self.speed * dt, dist)  # don't overshoot
+        nx = x + step * math.cos(heading)
+        ny = y + step * math.sin(heading)
 
-        # Physics-based velocity control (keep existing Z velocity for gravity)
-        lin_vel, _ = p.getBaseVelocity(self.body_id, physicsClientId=self.cid)
-        p.resetBaseVelocity(self.body_id, [vx, vy, lin_vel[2]], [0, 0, 0],
-                            physicsClientId=self.cid)
+        # ── Wall check: only move if the target cell is free ──
+        nr, nc = self._world_to_cell(nx, ny)
+        if self.grid[nr][nc] != 0:
+            # Blocked — skip to next waypoint instead of walking through
+            self._wp_idx = (self._wp_idx + 1) % len(self.waypoints)
+            return
 
-        # Keep model upright & face movement direction
+        # Also check intermediate point to avoid cutting corners through walls
+        mx = (x + nx) * 0.5
+        my = (y + ny) * 0.5
+        mr, mc = self._world_to_cell(mx, my)
+        if self.grid[mr][mc] != 0:
+            self._wp_idx = (self._wp_idx + 1) % len(self.waypoints)
+            return
+
+        # Kinematic move — directly set position
+        z_stand = 0.55 * self._scale
         orn = p.getQuaternionFromEuler([0, 0, heading])
-        p.resetBasePositionAndOrientation(self.body_id, [x, y, pos[2]], orn,
+        p.resetBasePositionAndOrientation(self.body_id, [nx, ny, z_stand], orn,
                                           physicsClientId=self.cid)
 
     def get_pose(self) -> Tuple[float, float, float, float]:

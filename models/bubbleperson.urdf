@@ -5,7 +5,7 @@
   <link name="torso">
     <visual>
       <geometry>
-        <sphere radius="0.25"/>
+        <sphere radius="0.50"/>
       </geometry>
       <material name="torso_color">
         <color rgba="0.8 0.4 0.2 1.0"/>
@@ -13,12 +13,12 @@
     </visual>
     <collision>
       <geometry>
-        <sphere radius="0.25"/>
+        <sphere radius="0.50"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="20.0"/>
-      <inertia ixx="0.5" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="0.5"/>
+      <mass value="35.0"/>
+      <inertia ixx="2.0" ixy="0.0" ixz="0.0" iyy="2.0" iyz="0.0" izz="2.0"/>
     </inertial>
   </link>
 
@@ -26,7 +26,7 @@
   <link name="head">
     <visual>
       <geometry>
-        <sphere radius="0.12"/>
+        <sphere radius="0.24"/>
       </geometry>
       <material name="head_color">
         <color rgba="1.0 0.8 0.6 1.0"/>
@@ -34,12 +34,12 @@
     </visual>
     <collision>
       <geometry>
-        <sphere radius="0.12"/>
+        <sphere radius="0.24"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="5.0"/>
-      <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
+      <mass value="8.0"/>
+      <inertia ixx="0.3" ixy="0.0" ixz="0.0" iyy="0.3" iyz="0.0" izz="0.3"/>
     </inertial>
   </link>
 
@@ -47,7 +47,7 @@
   <joint name="neck" type="revolute">
     <parent link="torso"/>
     <child link="head"/>
-    <origin xyz="0 0 0.3" rpy="0 0 0"/>
+    <origin xyz="0 0 0.6" rpy="0 0 0"/>
     <axis xyz="0 0 1"/>
     <limit lower="-1.57" upper="1.57" effort="100" velocity="1.0"/>
   </joint>
@@ -56,7 +56,7 @@
   <link name="left_upper_arm">
     <visual>
       <geometry>
-        <sphere radius="0.08"/>
+        <sphere radius="0.16"/>
       </geometry>
       <material name="arm_color">
         <color rgba="1.0 0.8 0.6 1.0"/>
@@ -64,12 +64,12 @@
     </visual>
     <collision>
       <geometry>
-        <sphere radius="0.08"/>
+        <sphere radius="0.16"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="3.0"/>
-      <inertia ixx="0.05" ixy="0.0" ixz="0.0" iyy="0.05" iyz="0.0" izz="0.05"/>
+      <mass value="5.0"/>
+      <inertia ixx="0.15" ixy="0.0" ixz="0.0" iyy="0.15" iyz="0.0" izz="0.15"/>
     </inertial>
   </link>
 
@@ -77,7 +77,7 @@
   <joint name="left_shoulder" type="revolute">
     <parent link="torso"/>
     <child link="left_upper_arm"/>
-    <origin xyz="-0.3 0 0.1" rpy="0 0 0"/>
+    <origin xyz="-0.6 0 0.2" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
   </joint>
@@ -86,7 +86,7 @@
   <link name="left_lower_arm">
     <visual>
       <geometry>
-        <sphere radius="0.06"/>
+        <sphere radius="0.12"/>
       </geometry>
       <material name="arm_color">
         <color rgba="1.0 0.8 0.6 1.0"/>
@@ -94,12 +94,12 @@
     </visual>
     <collision>
       <geometry>
-        <sphere radius="0.06"/>
+        <sphere radius="0.12"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="2.0"/>
-      <inertia ixx="0.02" ixy="0.0" ixz="0.0" iyy="0.02" iyz="0.0" izz="0.02"/>
+      <mass value="3.0"/>
+      <inertia ixx="0.06" ixy="0.0" ixz="0.0" iyy="0.06" iyz="0.0" izz="0.06"/>
     </inertial>
   </link>
 
@@ -107,7 +107,7 @@
   <joint name="left_elbow" type="revolute">
     <parent link="left_upper_arm"/>
     <child link="left_lower_arm"/>
-    <origin xyz="-0.2 0 0" rpy="0 0 0"/>
+    <origin xyz="-0.4 0 0" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="0" upper="2.35" effort="100" velocity="1.0"/>
   </joint>
@@ -116,7 +116,7 @@
   <link name="left_hand">
     <visual>
       <geometry>
-        <sphere radius="0.05"/>
+        <sphere radius="0.10"/>
       </geometry>
       <material name="hand_color">
         <color rgba="1.0 0.7 0.5 1.0"/>
@@ -124,12 +124,12 @@
     </visual>
     <collision>
       <geometry>
-        <sphere radius="0.05"/>
+        <sphere radius="0.10"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="1.0"/>
-      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+      <mass value="2.0"/>
+      <inertia ixx="0.03" ixy="0.0" ixz="0.0" iyy="0.03" iyz="0.0" izz="0.03"/>
     </inertial>
   </link>
 
@@ -137,7 +137,7 @@
   <joint name="left_wrist" type="revolute">
     <parent link="left_lower_arm"/>
     <child link="left_hand"/>
-    <origin xyz="-0.15 0 0" rpy="0 0 0"/>
+    <origin xyz="-0.30 0 0" rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit lower="-1.57" upper="1.57" effort="50" velocity="1.0"/>
   </joint>
@@ -146,7 +146,7 @@
   <link name="right_upper_arm">
     <visual>
       <geometry>
-        <sphere radius="0.08"/>
+        <sphere radius="0.16"/>
       </geometry>
       <material name="arm_color">
         <color rgba="1.0 0.8 0.6 1.0"/>
@@ -154,12 +154,12 @@
     </visual>
     <collision>
       <geometry>
-        <sphere radius="0.08"/>
+        <sphere radius="0.16"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="3.0"/>
-      <inertia ixx="0.05" ixy="0.0" ixz="0.0" iyy="0.05" iyz="0.0" izz="0.05"/>
+      <mass value="5.0"/>
+      <inertia ixx="0.15" ixy="0.0" ixz="0.0" iyy="0.15" iyz="0.0" izz="0.15"/>
     </inertial>
   </link>
 
@@ -167,7 +167,7 @@
   <joint name="right_shoulder" type="revolute">
     <parent link="torso"/>
     <child link="right_upper_arm"/>
-    <origin xyz="0.3 0 0.1" rpy="0 0 0"/>
+    <origin xyz="0.6 0 0.2" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
   </joint>
@@ -176,7 +176,7 @@
   <link name="right_lower_arm">
     <visual>
       <geometry>
-        <sphere radius="0.06"/>
+        <sphere radius="0.12"/>
       </geometry>
       <material name="arm_color">
         <color rgba="1.0 0.8 0.6 1.0"/>
@@ -184,12 +184,12 @@
     </visual>
     <collision>
       <geometry>
-        <sphere radius="0.06"/>
+        <sphere radius="0.12"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="2.0"/>
-      <inertia ixx="0.02" ixy="0.0" ixz="0.0" iyy="0.02" iyz="0.0" izz="0.02"/>
+      <mass value="3.0"/>
+      <inertia ixx="0.06" ixy="0.0" ixz="0.0" iyy="0.06" iyz="0.0" izz="0.06"/>
     </inertial>
   </link>
 
@@ -197,7 +197,7 @@
   <joint name="right_elbow" type="revolute">
     <parent link="right_upper_arm"/>
     <child link="right_lower_arm"/>
-    <origin xyz="0.2 0 0" rpy="0 0 0"/>
+    <origin xyz="0.4 0 0" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="0" upper="2.35" effort="100" velocity="1.0"/>
   </joint>
@@ -206,7 +206,7 @@
   <link name="right_hand">
     <visual>
       <geometry>
-        <sphere radius="0.05"/>
+        <sphere radius="0.10"/>
       </geometry>
       <material name="hand_color">
         <color rgba="1.0 0.7 0.5 1.0"/>
@@ -214,12 +214,12 @@
     </visual>
     <collision>
       <geometry>
-        <sphere radius="0.05"/>
+        <sphere radius="0.10"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="1.0"/>
-      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+      <mass value="2.0"/>
+      <inertia ixx="0.03" ixy="0.0" ixz="0.0" iyy="0.03" iyz="0.0" izz="0.03"/>
     </inertial>
   </link>
 
@@ -227,7 +227,7 @@
   <joint name="right_wrist" type="revolute">
     <parent link="right_lower_arm"/>
     <child link="right_hand"/>
-    <origin xyz="0.15 0 0" rpy="0 0 0"/>
+    <origin xyz="0.30 0 0" rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit lower="-1.57" upper="1.57" effort="50" velocity="1.0"/>
   </joint>
@@ -236,7 +236,7 @@
   <link name="left_upper_leg">
     <visual>
       <geometry>
-        <sphere radius="0.1"/>
+        <sphere radius="0.20"/>
       </geometry>
       <material name="leg_color">
         <color rgba="0.2 0.4 0.8 1.0"/>
@@ -244,12 +244,12 @@
     </visual>
     <collision>
       <geometry>
-        <sphere radius="0.1"/>
+        <sphere radius="0.20"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="8.0"/>
-      <inertia ixx="0.08" ixy="0.0" ixz="0.0" iyy="0.08" iyz="0.0" izz="0.08"/>
+      <mass value="12.0"/>
+      <inertia ixx="0.25" ixy="0.0" ixz="0.0" iyy="0.25" iyz="0.0" izz="0.25"/>
     </inertial>
   </link>
 
@@ -257,7 +257,7 @@
   <joint name="left_hip" type="revolute">
     <parent link="torso"/>
     <child link="left_upper_leg"/>
-    <origin xyz="-0.12 0 -0.3" rpy="0 0 0"/>
+    <origin xyz="-0.24 0 -0.6" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="-1.57" upper="1.57" effort="150" velocity="1.0"/>
   </joint>
@@ -266,7 +266,7 @@
   <link name="left_lower_leg">
     <visual>
       <geometry>
-        <sphere radius="0.08"/>
+        <sphere radius="0.16"/>
       </geometry>
       <material name="leg_color">
         <color rgba="0.2 0.4 0.8 1.0"/>
@@ -274,12 +274,12 @@
     </visual>
     <collision>
       <geometry>
-        <sphere radius="0.08"/>
+        <sphere radius="0.16"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="5.0"/>
-      <inertia ixx="0.04" ixy="0.0" ixz="0.0" iyy="0.04" iyz="0.0" izz="0.04"/>
+      <mass value="8.0"/>
+      <inertia ixx="0.12" ixy="0.0" ixz="0.0" iyy="0.12" iyz="0.0" izz="0.12"/>
     </inertial>
   </link>
 
@@ -287,7 +287,7 @@
   <joint name="left_knee" type="revolute">
     <parent link="left_upper_leg"/>
     <child link="left_lower_leg"/>
-    <origin xyz="0 0 -0.25" rpy="0 0 0"/>
+    <origin xyz="0 0 -0.50" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="0" upper="2.35" effort="150" velocity="1.0"/>
   </joint>
@@ -296,7 +296,7 @@
   <link name="left_foot">
     <visual>
       <geometry>
-        <sphere radius="0.06"/>
+        <sphere radius="0.12"/>
       </geometry>
       <material name="foot_color">
         <color rgba="0.3 0.3 0.3 1.0"/>
@@ -304,12 +304,12 @@
     </visual>
     <collision>
       <geometry>
-        <sphere radius="0.06"/>
+        <sphere radius="0.12"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="2.0"/>
-      <inertia ixx="0.02" ixy="0.0" ixz="0.0" iyy="0.02" iyz="0.0" izz="0.02"/>
+      <mass value="3.0"/>
+      <inertia ixx="0.06" ixy="0.0" ixz="0.0" iyy="0.06" iyz="0.0" izz="0.06"/>
     </inertial>
   </link>
 
@@ -317,7 +317,7 @@
   <joint name="left_ankle" type="revolute">
     <parent link="left_lower_leg"/>
     <child link="left_foot"/>
-    <origin xyz="0 0 -0.2" rpy="0 0 0"/>
+    <origin xyz="0 0 -0.4" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="-0.78" upper="0.78" effort="100" velocity="1.0"/>
   </joint>
@@ -326,7 +326,7 @@
   <link name="right_upper_leg">
     <visual>
       <geometry>
-        <sphere radius="0.1"/>
+        <sphere radius="0.20"/>
       </geometry>
       <material name="leg_color">
         <color rgba="0.2 0.4 0.8 1.0"/>
@@ -334,12 +334,12 @@
     </visual>
     <collision>
       <geometry>
-        <sphere radius="0.1"/>
+        <sphere radius="0.20"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="8.0"/>
-      <inertia ixx="0.08" ixy="0.0" ixz="0.0" iyy="0.08" iyz="0.0" izz="0.08"/>
+      <mass value="12.0"/>
+      <inertia ixx="0.25" ixy="0.0" ixz="0.0" iyy="0.25" iyz="0.0" izz="0.25"/>
     </inertial>
   </link>
 
@@ -347,7 +347,7 @@
   <joint name="right_hip" type="revolute">
     <parent link="torso"/>
     <child link="right_upper_leg"/>
-    <origin xyz="0.12 0 -0.3" rpy="0 0 0"/>
+    <origin xyz="0.24 0 -0.6" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="-1.57" upper="1.57" effort="150" velocity="1.0"/>
   </joint>
@@ -356,7 +356,7 @@
   <link name="right_lower_leg">
     <visual>
       <geometry>
-        <sphere radius="0.08"/>
+        <sphere radius="0.16"/>
       </geometry>
       <material name="leg_color">
         <color rgba="0.2 0.4 0.8 1.0"/>
@@ -364,12 +364,12 @@
     </visual>
     <collision>
       <geometry>
-        <sphere radius="0.08"/>
+        <sphere radius="0.16"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="5.0"/>
-      <inertia ixx="0.04" ixy="0.0" ixz="0.0" iyy="0.04" iyz="0.0" izz="0.04"/>
+      <mass value="8.0"/>
+      <inertia ixx="0.12" ixy="0.0" ixz="0.0" iyy="0.12" iyz="0.0" izz="0.12"/>
     </inertial>
   </link>
 
@@ -377,7 +377,7 @@
   <joint name="right_knee" type="revolute">
     <parent link="right_upper_leg"/>
     <child link="right_lower_leg"/>
-    <origin xyz="0 0 -0.25" rpy="0 0 0"/>
+    <origin xyz="0 0 -0.50" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="0" upper="2.35" effort="150" velocity="1.0"/>
   </joint>
@@ -386,7 +386,7 @@
   <link name="right_foot">
     <visual>
       <geometry>
-        <sphere radius="0.06"/>
+        <sphere radius="0.12"/>
       </geometry>
       <material name="foot_color">
         <color rgba="0.3 0.3 0.3 1.0"/>
@@ -394,12 +394,12 @@
     </visual>
     <collision>
       <geometry>
-        <sphere radius="0.06"/>
+        <sphere radius="0.12"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="2.0"/>
-      <inertia ixx="0.02" ixy="0.0" ixz="0.0" iyy="0.02" iyz="0.0" izz="0.02"/>
+      <mass value="3.0"/>
+      <inertia ixx="0.06" ixy="0.0" ixz="0.0" iyy="0.06" iyz="0.0" izz="0.06"/>
     </inertial>
   </link>
 
@@ -407,7 +407,7 @@
   <joint name="right_ankle" type="revolute">
     <parent link="right_lower_leg"/>
     <child link="right_foot"/>
-    <origin xyz="0 0 -0.2" rpy="0 0 0"/>
+    <origin xyz="0 0 -0.4" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="-0.78" upper="0.78" effort="100" velocity="1.0"/>
   </joint>
